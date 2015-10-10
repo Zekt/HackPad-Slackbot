@@ -4,27 +4,38 @@ import requests
 import json
 import html2text
 import re
+import sys
 
-SITE = ""
-padID = ""
-email = ""
-hackpadKey = ""
-hackpadSecret = ""
+# Default configurations
+settings = {
+    "site": "ntuosc",
+    "pad_id": "l0rem1psum",
+    "email": "contact@ntuosc.org",
+    "hackpad_key": "Sh1BAArrR",
+    "hackpad_secret": "W0wMUchseCure",
+    "slack_url": "https://example.slack.com/api/incoming/webhook/url",
+}
 
-slackURL = ""
+try:
+    with open('settings.json', 'r') as f:
+        new_settings = json.load(f)
+        settings.update(new_settings)
+except IOError:
+    print('You should create your configuration file first')
+    sys.exit(1)
 
-api_method = "https://"+SITE+".hackpad.com/api/1.0/pad/"+padID+"/revisions"
+api_method = "https://{site}.hackpad.com/api/1.0/pad/{pad_id}/revisions".format(**settings)
 
 
 params = {
     'oauth_version': "1.0",
     'oauth_nonce': oauth2.generate_nonce(),
     'oauth_timestamp': int(time.time()),
-    'email': email,
-    'padId': padID
+    'email': settings['email'],
+    'padId': settings['pad_id'],
 }
 
-comsumer = oauth2.Consumer(key=hackpadKey, secret=hackpadSecret)
+comsumer = oauth2.Consumer(key=settings['hackpad_key'], secret=settings['hackpad_secret'])
 params['oauth_consumer_key'] = comsumer.key
 r = oauth2.Request(method='GET', url=api_method, parameters=params)
 signature_method = oauth2.SignatureMethod_HMAC_SHA1()
@@ -61,7 +72,7 @@ while True:
             "icon_url": j[0]['authorPics'][0]
         }
         
-        requests.post(slackURL, data=json.dumps(payload))
+        requests.post(settings['slack_url'], data=json.dumps(payload))
         lastTimeStamp = timeStamp
     else:
         serial = False
